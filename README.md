@@ -1,5 +1,5 @@
 # Raspberry Pi 5 Talos Builder
-This repository serves as the glue to build custom Talos images for the Raspberry Pi 5. It patches the Kernel and Talos build process to use the Linux Kernel source provided by [raspberrypi/linux](https://github.com/raspberrypi/linux). 
+This repository serves as the glue to build custom Talos images for the Raspberry Pi 5. It patches the Kernel and Talos build process to use the Linux Kernel source provided by [raspberrypi/linux](https://github.com/raspberrypi/linux).
 
 ## Tested on
 So far, this release has been verified on:
@@ -14,7 +14,7 @@ So far, this release has been verified on:
 * Booting from USB: USB is only available once LINUX has booted up but not in U-Boot.
 
 ## How to use?
-The releases on this repository align with the corresponding Talos version. There is a raw disk image (initial setup) and an installer image (upgrades) provided. 
+The releases on this repository align with the corresponding Talos version. There is a raw disk image (initial setup) and an installer image (upgrades) provided.
 
 ### Examples
 Initial:
@@ -32,20 +32,29 @@ talosctl upgrade \
 ```
 
 ## Building
-If you'd like to make modifications, it is possible to create your own build. Bellow is an example of the standard build.
+
+If you'd like to make modifications, it is possible to create your own build. Bellow is an example of the standard build. The Makefile needs the model specifying in order to label the produced images properly, model should be `rpi4` or `rpi5`.
+
+On a Mac use `gmake` not `make` and set `SED=gsed` on the command line.
 
 ```
-# Clones all dependencies and applies the necessary patches
-make checkouts patches
+# To build all assets from the kernel up to the installer for the RPi5
+make RPI_MODEL=rpi5 pi5
 
-# Builds the Linux Kernel (can take a while)
-make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> kernel
+# For the Pi4 installer image
+make RPI_MODEL=rpi4 pi4
 
-# Builds the overlay (U-Boot, dtoverlays ...)
-make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> overlay
+# For the Pi5 installer image on Mac
+gmake RPI_MODEL=rpi5 SED=gsed pi5
 
-# Final step to build the installer and disk image
-make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> installer
+# To make SD card images set ASSET_TYPE=metal
+make RPI_MODEL=rpi5 ASSET_TYPE=metal pi5
+
+# To build with a specific registry
+make RPI_MODEL=rpi5 REGISTRY=ghcr.io pi5
+
+# To include system extensions (space-separated; each gets its own --system-extension-image flag)
+make RPI_MODEL=rpi5 EXTENSIONS="ghcr.io/siderolabs/iscsi-tools:v0.1.4@sha256:<digest> ghcr.io/siderolabs/util-linux-tools:v2.40.2@sha256:<digest>" pi5
 ```
 
 ## License
