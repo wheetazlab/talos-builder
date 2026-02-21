@@ -78,8 +78,6 @@ patches-pkgs:
 patches-talos:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		git am "$(PATCHES_DIRECTORY)/siderolabs/talos/0001-Patched-for-Raspberry-Pi-5.patch"
-	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0002-Makefile.patch"
 
 patches-pi5: patches-pkgs patches-talos
 
