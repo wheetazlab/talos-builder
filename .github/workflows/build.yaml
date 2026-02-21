@@ -32,7 +32,7 @@ jobs:
           echo "/opt/homebrew/opt/make/libexec/gnubin" >> $GITHUB_PATH
       - name: Start Docker (colima)
         run: |
-          brew install colima
+          brew install colima docker
           colima start --arch aarch64 --vm-type vz --vz-rosetta --cpu 3 --memory 12 --disk 80
           sudo ln -sf ~/.colima/default/docker.sock /var/run/docker.sock
       - uses: docker/setup-buildx-action@v3
