@@ -43,6 +43,19 @@ talosctl upgrade \
 
 ## Building
 
+### Using GitHub Actions
+
+The CI workflow builds and publishes images automatically. It can be triggered two ways:
+
+- **Push a tag** matching `v*.*.*` — this triggers the full build and creates a GitHub Release:
+  ```bash
+  git tag v1.11.5-cm5
+  git push origin v1.11.5-cm5
+  ```
+- **Manual run** — go to Actions → build → "Run workflow" to trigger a build without creating a release.
+
+### Local build
+
 If you'd like to make modifications, it is possible to create your own build. Bellow is an example of the standard build.
 
 ```bash
