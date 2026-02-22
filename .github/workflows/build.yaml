@@ -3,6 +3,15 @@ on:
     tags:
       - 'v*.*.*'
 
+env:
+  RPI_MODEL: rpi5
+  REGISTRY: ghcr.io
+  REGISTRY_USERNAME: ${{ github.repository_owner }}
+  # Extensions to bake into the installer image.
+  # Format: space-separated list of image:tag references (digests resolved at build time).
+  EXTENSION_ISCSI_IMAGE: ghcr.io/siderolabs/iscsi-tools:v0.2.0
+  EXTENSION_UTIL_LINUX_IMAGE: ghcr.io/siderolabs/util-linux-tools:2.41.2
+
 jobs:
   build:
     permissions:
@@ -27,21 +36,59 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Resolve extension image digests
+        run: |
+          EXTENSIONS=""
+          while IFS= read -r line; do
+            IMAGE="${line#*=}"
+            DIGEST=$(crane digest "$IMAGE")
+            EXTENSIONS="$EXTENSIONS $IMAGE@$DIGEST"
+          done < <(env | grep '^EXTENSION_')
+          echo "EXTENSIONS=${EXTENSIONS# }" >> $GITHUB_ENV
+
       - name: Prepare (checkouts & patches)
-        run: make checkouts patches
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} checkouts patches-pi5
 
       - name: Kernel
-        run: make kernel
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kernel
+
+      - name: Kernel initramfs
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kern_initramfs
+
+      - name: Installer base
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} installer-base
+
+      - name: Imager
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} imager
 
       - name: Overlay
-        run: make overlay
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} overlay
 
-      - name: Installer
-        run: make installer
+      - name: Build installer image (with extensions)
+        run: |
+          make RPI_MODEL=${{ env.RPI_MODEL }} \
+            REGISTRY=${{ env.REGISTRY }} \
+            REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} \
+            ASSET_TYPE=installer \
+            EXTENSIONS="${{ env.EXTENSIONS }}" \
+            installer-pi5
+          # Push the installer OCI tarball so it can be used for upgrades
+          crane push \
+            ./checkouts/talos/_out/installer-arm64.tar \
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_USERNAME }}/installer:$(cd checkouts/talos && git describe --tag --always --dirty --match v[0-9]*)
 
-      - name: Release
+      - name: Build metal disk image (for fresh installs)
+        run: |
+          make RPI_MODEL=${{ env.RPI_MODEL }} \
+            REGISTRY=${{ env.REGISTRY }} \
+            REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} \
+            ASSET_TYPE=metal \
+            EXTENSIONS="${{ env.EXTENSIONS }}" \
+            installer-pi5
+
+      - name: Release (tag installer image with git tag)
         if: startsWith(github.ref, 'refs/tags/v')
-        run: make release
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} release
 
       - name: Create GitHub Release
         env:
@@ -52,10 +99,15 @@ jobs:
           
           This is a patched version of Talos tailored for the Raspberry Pi 5, including NVMe, NIC and USB support.
           
+          ### Extensions included
+          
+          - \`iscsi-tools\` ${{ env.EXTENSION_ISCSI_IMAGE }}
+          - \`util-linux-tools\` ${{ env.EXTENSION_UTIL_LINUX_IMAGE }}
+          
           ### What's available
           
           - 📦 **Raw disk image** (\`metal-arm64.raw.zst\`) for fresh installs
-          - ⚙️  **Installer image** (\`ghcr.io/talos-rpi5/installer:${{ github.ref_name }}\`) for upgrades
+          - ⚙️  **Installer image** (\`${{ env.REGISTRY }}/${{ env.REGISTRY_USERNAME }}/installer:${{ github.ref_name }}\`) for upgrades
           
           ### Install
           
@@ -65,7 +117,7 @@ jobs:
           
           - **Upgrade existing node**
             \`\`\`bash
-            talosctl upgrade --nodes <NODE_IP> --image ghcr.io/talos-rpi5/installer:${{ github.ref_name }}
+            talosctl upgrade --nodes <NODE_IP> --image ${{ env.REGISTRY }}/${{ env.REGISTRY_USERNAME }}/installer:${{ github.ref_name }}
             \`\`\`
           
           EOF
