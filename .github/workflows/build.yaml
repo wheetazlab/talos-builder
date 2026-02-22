@@ -38,9 +38,13 @@ jobs:
 
       - name: Resolve extension image digests
         run: |
-          ISCSI_DIGEST=$(crane digest ${{ env.EXTENSION_ISCSI_IMAGE }})
-          UTIL_DIGEST=$(crane digest ${{ env.EXTENSION_UTIL_LINUX_IMAGE }})
-          echo "EXTENSIONS=${{ env.EXTENSION_ISCSI_IMAGE }}@${ISCSI_DIGEST} ${{ env.EXTENSION_UTIL_LINUX_IMAGE }}@${UTIL_DIGEST}" >> $GITHUB_ENV
+          EXTENSIONS=""
+          while IFS= read -r line; do
+            IMAGE="${line#*=}"
+            DIGEST=$(crane digest "$IMAGE")
+            EXTENSIONS="$EXTENSIONS $IMAGE@$DIGEST"
+          done < <(env | grep '^EXTENSION_')
+          echo "EXTENSIONS=${EXTENSIONS# }" >> $GITHUB_ENV
 
       - name: Prepare (checkouts & patches)
         run: make RPI_MODEL=${{ env.RPI_MODEL }} checkouts patches-pi5

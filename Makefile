@@ -6,7 +6,7 @@ PUSH ?= true
 REGISTRY ?= ghcr.io
 
 ifndef RPI_MODEL
-$(error RPI_MODEL is required but not set, ie rpi5 or rpi4)
+RPI_MODEL = rpi5
 endif
 REGISTRY_USERNAME ?= talos-$(RPI_MODEL)
 TAG ?= $(shell git describe --tags --exact-match)
