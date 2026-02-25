@@ -127,14 +127,14 @@ Set `OVERLAY_OPTIONS` in `.github/workflows/build.yaml`:
 
 ```yaml
 env:
-  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d'
+  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512'
 ```
 
 **Adding overlay options for a local build:**
 
 ```bash
 make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
-  OVERLAY_OPTIONS='configTxtAppend=dtoverlay=vc4-kms-v3d' \
+  OVERLAY_OPTIONS='configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512' \
   installer-pi5
 ```
 
@@ -173,7 +173,7 @@ Both can be combined with extensions:
 ```bash
 make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
   EXTENSIONS='ghcr.io/siderolabs/vc4:v1.0.0@sha256:...' \
-  OVERLAY_OPTIONS='configTxtAppend=dtoverlay=vc4-fkms-v3d' \
+  OVERLAY_OPTIONS='configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512' \
   KERNEL_ARGS='-console console=tty0' \
   installer-pi5
 ```

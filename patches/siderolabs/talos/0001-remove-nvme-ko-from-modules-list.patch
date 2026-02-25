@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000001 Mon Sep 17 00:00:00 2001
+From: talos-builder <talos-builder@local>
+Date: Mon, 17 Jan 2000 00:00:00 +0000
+Subject: [PATCH] Remove nvme.ko from hack/modules-arm64.txt
+
+When CONFIG_BLK_DEV_NVME=y the nvme driver (and its nvme-core dependency)
+are compiled directly into the kernel image. No nvme.ko file is generated,
+so attempting to copy it into the initramfs staging area causes the build
+to fail with:
+
+  install: cannot stat '...kernel/drivers/nvme/host/nvme.ko': No such file or directory
+
+Remove the entry so the depmod stage succeeds. NVMe support is still
+present – it is now built-in rather than modular.
+---
+ hack/modules-arm64.txt | 1 -
+ 1 file changed, 0 insertions(+), 1 deletion(-)
+
+diff --git a/hack/modules-arm64.txt b/hack/modules-arm64.txt
+index 0000000..0000000 100644
+--- a/hack/modules-arm64.txt
++++ b/hack/modules-arm64.txt
+@@ -167,7 +167,6 @@
+ kernel/drivers/net/vrf.ko
+ kernel/drivers/nvme/common/nvme-auth.ko
+ kernel/drivers/nvme/host/nvme-rdma.ko
+-kernel/drivers/nvme/host/nvme.ko
+ kernel/drivers/nvme/target/nvme-loop.ko
+ kernel/drivers/nvme/target/nvmet-fc.ko
+ kernel/drivers/nvme/target/nvmet-rdma.ko

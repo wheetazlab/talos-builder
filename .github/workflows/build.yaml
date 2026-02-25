@@ -13,8 +13,8 @@ env:
   EXTENSION_UTIL_LINUX_IMAGE: ghcr.io/siderolabs/util-linux-tools:2.41.2
   EXTENSION_VC4_IMAGE: ghcr.io/siderolabs/vc4:v1.12.4
   EXTENSION_V4L_UVC_DRIVERS_IMAGE: ghcr.io/siderolabs/v4l-uvc-drivers:v1.12.4
-  # Space-separated overlay options, e.g: configTxtAppend=dtoverlay=vc4-fkms-v3d
-  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d''
+  # Space-separated overlay options, e.g: configTxtAppend=dtoverlay=vc4-kms-v3d,cma-256
+  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512'
   # Space-separated extra kernel cmdline args, prefix with - to remove a default, e.g: -console console=tty0
   KERNEL_ARGS: ''
 

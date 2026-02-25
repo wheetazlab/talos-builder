@@ -78,6 +78,8 @@ patches-pkgs:
 
 patches-talos:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0001-remove-nvme-ko-from-modules-list.patch"
+	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0002-Makefile.patch"
 
 patches-pi5: patches-pkgs patches-talos
