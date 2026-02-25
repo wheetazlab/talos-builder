@@ -1,6 +1,6 @@
 # Raspberry Pi 5 Talos Builder
 
-This repository serves as the glue to build custom Talos images for the Raspberry Pi 5. It patches the Kernel and Talos build process to use the Linux Kernel source provided by [raspberrypi/linux](https://github.com/raspberrypi/linux).
+This repository builds custom Talos images for the Raspberry Pi 5 and Compute Module 5. It applies minimal patches on top of the official [siderolabs/pkgs](https://github.com/siderolabs/pkgs) upstream kernel and uses the official [siderolabs/sbc-raspberrypi](https://github.com/siderolabs/sbc-raspberrypi) overlay for CM5 DTBs and U-Boot.
 
 ## Tested on
 
@@ -14,7 +14,7 @@ So far, this release has been verified on:
 
 ## What's not working?
 
-* Booting from USB: USB is only available once LINUX has booted up but not in U-Boot.
+* **Booting from USB:** USB on the RPi5/CM5 is routed through the RP1 southbridge, which requires firmware initialisation that only happens during Linux boot. U-Boot runs before that initialisation occurs, so USB devices are not visible at boot time and cannot be used as a boot source.
 
 ## How to use?
 
@@ -46,13 +46,13 @@ The CI workflow builds and publishes images automatically. It is triggered when 
 
 - **Push a tag** matching `v*.*.*` — this triggers the full build and creates a GitHub Release:
   ```bash
-  git tag v1.11.5-cm5
-  git push origin v1.11.5-cm5
+  git tag v1.12.4
+  git push origin v1.12.4
   ```
 
 ### Local build
 
-If you'd like to make modifications, it is possible to create your own build. Bellow is an example of the standard build.
+If you'd like to make modifications, it is possible to create your own build. Below is an example of the standard build.
 
 ```bash
 # Clones all dependencies and applies the necessary patches
@@ -61,11 +61,12 @@ make checkouts patches
 # Builds the Linux Kernel (can take a while)
 make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> kernel
 
-# Builds the overlay (U-Boot, dtoverlays ...)
-make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> overlay
+# Builds kernel initramfs, installer-base, and imager
+make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> kern_initramfs installer-base imager
 
 # Final step to build the installer and disk image
-make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> installer
+# The official sbc-raspberrypi:v0.1.9 overlay (includes CM5 DTBs) is pulled automatically
+make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> installer-pi5
 ```
 
 ### Extensions support
@@ -106,6 +107,50 @@ make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
 ```
 
 Pass multiple extensions as a space-separated string inside the quotes.
+
+## v1.12.4 — Migration to Official Upstream Components
+
+Starting with v1.12.4 this build switched from the custom `talos-rpi5/sbc-raspberrypi5` overlay to the official Siderolabs overlay, and from the Raspberry Pi kernel fork to the mainstream upstream kernel. Here is what changed and why.
+
+### What changed
+
+| Component | Before (v1.11.5) | After (v1.12.4) |
+|---|---|---|
+| Kernel | `raspberrypi/linux stable_20250428` (6.12.x RPi fork) | Upstream Linux **6.18.9** (via `siderolabs/pkgs@b1fc4c6`) |
+| Overlay | `talos-rpi5/sbc-raspberrypi5` (custom, built from source) | `ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9` (official) |
+| CM5 DTBs | Provided by RPi kernel fork | Provided by `sbc-raspberrypi:v0.1.9` (builds all `bcm2712*.dtb` from RPi kernel) |
+| NF_TABLES_BRIDGE | Patched in | Already `=y` in upstream 6.18.9 |
+| RP1 drivers | Patched in as RPi-fork-specific configs | Already `=y` upstream (`CONFIG_MISC_RP1`) |
+| pi5 build pipeline | `checkouts → patches → kernel → initramfs → installer-base → imager → overlay → installer` | `checkouts → patches → kernel → initramfs → installer-base → imager → installer` (no overlay build — official image pulled at runtime) |
+
+### Why we switched
+
+**CM5 support is now official.** `siderolabs/sbc-raspberrypi v0.1.9` (released February 24, 2026) builds DTBs
+directly from `raspberrypi/linux stable_20250428`, which includes all CM5 device trees:
+`bcm2712-rpi-cm5-cm5io.dtb`, `bcm2712-rpi-cm5-cm4io.dtb`, `bcm2712-rpi-cm5l-*.dtb`. There is no longer a
+need to maintain a separate overlay build.
+
+**The RPi kernel fork is stuck at 6.12.x.** The latest `raspberrypi/linux` tag (`stable_20250916`) is based on
+Linux 6.12. The `siderolabs/pkgs` build toolchain for Talos 1.12.x targets 6.18.x, making the kernel swap
+approach from v1.11.x incompatible.
+
+**Most RPi5-specific kernel configs landed upstream.** Linux 6.18 includes `CONFIG_MISC_RP1=y`,
+`CONFIG_NF_TABLES_BRIDGE=y`, and full RP1 peripheral support in the mainline tree. The large 1200-line
+kernel config patch from v1.11.x is no longer needed.
+
+### What we still patch
+
+One kernel config change is still required because Talos must be able to boot from NVMe at initrd time:
+
+```
+CONFIG_BLK_DEV_NVME=m  →  CONFIG_BLK_DEV_NVME=y
+```
+
+Without this the NVMe driver is a loadable module and is not available early enough in the boot sequence for
+the root filesystem to be found. The official upstream config still ships it as `=m` as of pkgs `b1fc4c6`.
+
+The macOS `sed` compatibility patch for the Talos Makefile (`talos/0002-Makefile.patch`) is also retained for
+local builds on macOS.
 
 ## License
 
