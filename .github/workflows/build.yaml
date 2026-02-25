@@ -117,11 +117,11 @@ jobs:
           ### config.txt overlay options
           
           - \`dtparam=i2c_arm=on\` _(always included by default)_
-          ${{ env.OVERLAY_OPTIONS != '' && format('- `{0}`', env.OVERLAY_OPTIONS) || '_(none additional)_' }}
+          $([ -n "${{ env.OVERLAY_OPTIONS }}" ] && echo "- \`${{ env.OVERLAY_OPTIONS }}\`" || echo "_(none additional)_")
           
           ### Extra kernel args
           
-          ${{ env.KERNEL_ARGS != '' && format('`{0}`', env.KERNEL_ARGS) || '_(none — defaults only)_' }}
+          $([ -n "${{ env.KERNEL_ARGS }}" ] && echo "\`${{ env.KERNEL_ARGS }}\`" || echo "_(none — defaults only)_")
           
           ### What's available
           
