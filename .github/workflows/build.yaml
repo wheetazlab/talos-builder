@@ -13,7 +13,8 @@ env:
   EXTENSION_UTIL_LINUX_IMAGE: ghcr.io/siderolabs/util-linux-tools:2.41.2
   EXTENSION_VC4_IMAGE: ghcr.io/siderolabs/vc4:v1.12.4
   EXTENSION_V4L_UVC_DRIVERS_IMAGE: ghcr.io/siderolabs/v4l-uvc-drivers:v1.12.4
-  # Space-separated overlay options, e.g: configTxtAppend=dtoverlay=vc4-kms-v3d,cma-256
+  # Space-separated overlay options appended AFTER the default dtparam=i2c_arm=on.
+  # e.g: configTxtAppend=dtoverlay=vc4-kms-v3d,cma-256
   OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512'
   # Space-separated extra kernel cmdline args, prefix with - to remove a default, e.g: -console console=tty0
   KERNEL_ARGS: ''
@@ -110,6 +111,17 @@ jobs:
           
           - \`iscsi-tools\` ${{ env.EXTENSION_ISCSI_IMAGE }}
           - \`util-linux-tools\` ${{ env.EXTENSION_UTIL_LINUX_IMAGE }}
+          - \`vc4\` ${{ env.EXTENSION_VC4_IMAGE }}
+          - \`v4l-uvc-drivers\` ${{ env.EXTENSION_V4L_UVC_DRIVERS_IMAGE }}
+          
+          ### config.txt overlay options
+          
+          - \`dtparam=i2c_arm=on\` _(always included by default)_
+          ${{ env.OVERLAY_OPTIONS != '' && format('- `{0}`', env.OVERLAY_OPTIONS) || '_(none additional)_' }}
+          
+          ### Extra kernel args
+          
+          ${{ env.KERNEL_ARGS != '' && format('`{0}`', env.KERNEL_ARGS) || '_(none — defaults only)_' }}
           
           ### What's available
           
@@ -133,4 +145,5 @@ jobs:
             ${{ github.ref_name }} \
             ./checkouts/talos/_out/metal-arm64.raw.zst \
             --title "${{ github.ref_name }}" \
+            $([[ "${{ github.ref_name }}" =~ -(alpha|beta|rc)\. ]] && echo "--prerelease") \
             --notes "$NOTES"

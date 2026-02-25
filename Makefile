@@ -23,8 +23,7 @@ OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
 KERNEL_ARGS ?=
 KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 
-SBCOVERLAY_PI5_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
-SBCOVERLAY_PI4_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
+SBCOVERLAY_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
 
 PKG_REPOSITORY = https://github.com/siderolabs/pkgs.git
 TALOS_REPOSITORY = https://github.com/siderolabs/talos.git
@@ -134,36 +133,26 @@ kern_initramfs:
 #
 # Installer/Image
 #
-.PHONY: installer-pi5
-installer-pi5:
+# CONFIG_TXT (dtparam=i2c_arm=on by default) is always prepended so I2C is
+# available out of the box. Any OVERLAY_OPTIONS passed via the environment
+# or build.yaml are appended after, keeping them fully additive.
+.PHONY: installer
+installer:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		docker \
 			run --rm -t -v ./_out:/out -v /dev:/dev --privileged $(REGISTRY)/$(REGISTRY_USERNAME)/imager:$(TALOS_TAG) \
 			$(ASSET_TYPE) --arch arm64 \
 			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
 			--overlay-name="rpi_generic" \
-			--overlay-image="$(SBCOVERLAY_PI5_IMAGE)" \
-			$(OVERLAY_OPTION_ARGS) \
-			$(KERNEL_ARG_ARGS) \
-			$(EXTENSION_ARGS)
-
-.PHONY: installer-pi4
-installer-pi4:
-	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
-		docker \
-			run --rm -t -v ./_out:/out -v /dev:/dev --privileged $(REGISTRY)/$(REGISTRY_USERNAME)/imager:$(TALOS_TAG) \
-			$(ASSET_TYPE) --arch arm64 \
-			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
-			--overlay-name="rpi_generic" \
-			--overlay-image="$(SBCOVERLAY_PI4_IMAGE)" \
+			--overlay-image="$(SBCOVERLAY_IMAGE)" \
 			--overlay-option="configTxtAppend=$(CONFIG_TXT)" \
 			$(OVERLAY_OPTION_ARGS) \
 			$(KERNEL_ARG_ARGS) \
 			$(EXTENSION_ARGS)
 
-# Backwards-compatible alias
-.PHONY: installer
-installer: installer-pi5
+# Backwards-compatible aliases
+.PHONY: installer-pi5 installer-pi4
+installer-pi5 installer-pi4: installer
 
 #
 # Release
@@ -175,10 +164,10 @@ release:
 		docker push $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG)
 
 .PHONY: pi5
-pi5: checkouts-clean checkouts patches-pi5 kernel kern_initramfs installer-base imager installer-pi5
+pi5: checkouts-clean checkouts patches-pi5 kernel kern_initramfs installer-base imager installer
 
 .PHONY: pi4
-pi4: checkouts-clean checkouts patches-pi4 kernel kern_initramfs installer-base imager installer-pi4
+pi4: checkouts-clean checkouts patches-pi4 kernel kern_initramfs installer-base imager installer
 
 #
 # Clean
