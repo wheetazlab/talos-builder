@@ -141,6 +141,7 @@ jobs:
           
           EOF
           )
+          gh release delete ${{ github.ref_name }} --yes 2>/dev/null || true
           gh release create \
             ${{ github.ref_name }} \
             ./checkouts/talos/_out/metal-arm64.raw.zst \
