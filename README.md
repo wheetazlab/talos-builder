@@ -108,6 +108,76 @@ make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
 
 Pass multiple extensions as a space-separated string inside the quotes.
 
+### Overlay options support
+
+Overlay options customise the `config.txt` and other sbc-raspberrypi overlay settings.
+
+**Makefile variables:**
+
+```makefile
+OVERLAY_OPTIONS ?=
+OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
+```
+
+`OVERLAY_OPTIONS` is a space-separated list of `key=value` pairs. Each entry becomes a separate `--overlay-option` flag passed to the Talos imager.
+
+**Adding overlay options to the CI build:**
+
+Set `OVERLAY_OPTIONS` in `.github/workflows/build.yaml`:
+
+```yaml
+env:
+  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d'
+```
+
+**Adding overlay options for a local build:**
+
+```bash
+make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
+  OVERLAY_OPTIONS='configTxtAppend=dtoverlay=vc4-kms-v3d' \
+  installer-pi5
+```
+
+### Kernel command line arguments support
+
+Extra kernel cmdline arguments are appended to (or remove from) the default Talos kernel command line.
+
+**Makefile variables:**
+
+```makefile
+KERNEL_ARGS ?=
+KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
+```
+
+`KERNEL_ARGS` is a space-separated list of kernel arguments. Prefix an argument with `-` to remove it from the default command line.
+
+**Adding kernel args to the CI build:**
+
+Set `KERNEL_ARGS` in `.github/workflows/build.yaml`:
+
+```yaml
+env:
+  KERNEL_ARGS: '-console console=tty0'
+```
+
+**Adding kernel args for a local build:**
+
+```bash
+make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
+  KERNEL_ARGS='-console console=tty0' \
+  installer-pi5
+```
+
+Both can be combined with extensions:
+
+```bash
+make REGISTRY=ghcr.io REGISTRY_USERNAME=<username> \
+  EXTENSIONS='ghcr.io/siderolabs/vc4:v1.0.0@sha256:...' \
+  OVERLAY_OPTIONS='configTxtAppend=dtoverlay=vc4-fkms-v3d' \
+  KERNEL_ARGS='-console console=tty0' \
+  installer-pi5
+```
+
 ## v1.12.4 — Migration to Official Upstream Components
 
 Starting with v1.12.4 this build switched from the custom `talos-rpi5/sbc-raspberrypi5` overlay to the official Siderolabs overlay, and from the Raspberry Pi kernel fork to the mainstream upstream kernel. Here is what changed and why.

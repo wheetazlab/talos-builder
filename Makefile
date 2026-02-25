@@ -17,6 +17,12 @@ CONFIG_TXT = dtparam=i2c_arm=on
 EXTENSIONS ?=
 EXTENSION_ARGS = $(foreach ext,$(EXTENSIONS),--system-extension-image $(ext))
 
+OVERLAY_OPTIONS ?=
+OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
+
+KERNEL_ARGS ?=
+KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
+
 SBCOVERLAY_PI5_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
 SBCOVERLAY_PI4_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
 
@@ -135,6 +141,8 @@ installer-pi5:
 			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
 			--overlay-name="rpi5" \
 			--overlay-image="$(SBCOVERLAY_PI5_IMAGE)" \
+			$(OVERLAY_OPTION_ARGS) \
+			$(KERNEL_ARG_ARGS) \
 			$(EXTENSION_ARGS)
 
 .PHONY: installer-pi4
@@ -147,6 +155,8 @@ installer-pi4:
 			--overlay-name="rpi_generic" \
 			--overlay-image="$(SBCOVERLAY_PI4_IMAGE)" \
 			--overlay-option="configTxtAppend=$(CONFIG_TXT)" \
+			$(OVERLAY_OPTION_ARGS) \
+			$(KERNEL_ARG_ARGS) \
 			$(EXTENSION_ARGS)
 
 # Backwards-compatible alias

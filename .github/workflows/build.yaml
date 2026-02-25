@@ -11,6 +11,12 @@ env:
   # Format: space-separated list of image:tag references (digests resolved at build time).
   EXTENSION_ISCSI_IMAGE: ghcr.io/siderolabs/iscsi-tools:v0.2.0
   EXTENSION_UTIL_LINUX_IMAGE: ghcr.io/siderolabs/util-linux-tools:2.41.2
+  EXTENSION_VC4_IMAGE: ghcr.io/siderolabs/vc4:v1.12.4
+  EXTENSION_V4L_UVC_DRIVERS_IMAGE: ghcr.io/siderolabs/v4l-uvc-drivers:v1.12.4
+  # Space-separated overlay options, e.g: configTxtAppend=dtoverlay=vc4-fkms-v3d
+  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d''
+  # Space-separated extra kernel cmdline args, prefix with - to remove a default, e.g: -console console=tty0
+  KERNEL_ARGS: ''
 
 jobs:
   build:
@@ -68,6 +74,8 @@ jobs:
             REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} \
             ASSET_TYPE=installer \
             EXTENSIONS="${{ env.EXTENSIONS }}" \
+            OVERLAY_OPTIONS="${{ env.OVERLAY_OPTIONS }}" \
+            KERNEL_ARGS="${{ env.KERNEL_ARGS }}" \
             installer-pi5
           # Push the installer OCI tarball so it can be used for upgrades
           crane push \
@@ -81,6 +89,8 @@ jobs:
             REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} \
             ASSET_TYPE=metal \
             EXTENSIONS="${{ env.EXTENSIONS }}" \
+            OVERLAY_OPTIONS="${{ env.OVERLAY_OPTIONS }}" \
+            KERNEL_ARGS="${{ env.KERNEL_ARGS }}" \
             installer-pi5
 
       - name: Release (tag installer image with git tag)
