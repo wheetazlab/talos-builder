@@ -1,6 +1,5 @@
-PKG_VERSION = v1.11.0
-TALOS_VERSION = v1.11.5
-SBCOVERLAY_VERSION = main
+PKG_VERSION = b1fc4c6
+TALOS_VERSION = v1.12.4
 
 PUSH ?= true
 REGISTRY ?= ghcr.io
@@ -18,18 +17,17 @@ CONFIG_TXT = dtparam=i2c_arm=on
 EXTENSIONS ?=
 EXTENSION_ARGS = $(foreach ext,$(EXTENSIONS),--system-extension-image $(ext))
 
-SBCOVERLAY_PI4_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.5
+SBCOVERLAY_PI5_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
+SBCOVERLAY_PI4_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
 
 PKG_REPOSITORY = https://github.com/siderolabs/pkgs.git
 TALOS_REPOSITORY = https://github.com/siderolabs/talos.git
-SBCOVERLAY_REPOSITORY = https://github.com/talos-rpi5/sbc-raspberrypi5.git
 
 CHECKOUTS_DIRECTORY := $(PWD)/checkouts
 PATCHES_DIRECTORY := $(PWD)/patches
 
 PKGS_TAG = $(shell cd $(CHECKOUTS_DIRECTORY)/pkgs && git describe --tag --always --dirty --match v[0-9]\*)
 TALOS_TAG = $(shell cd $(CHECKOUTS_DIRECTORY)/talos && git describe --tag --always --dirty --match v[0-9]\*)
-SBCOVERLAY_TAG = $(shell cd $(CHECKOUTS_DIRECTORY)/sbc-raspberrypi5 && git describe --tag --always --dirty)-$(PKGS_TAG)
 
 #
 # Help
@@ -40,7 +38,7 @@ help:
 	@echo "patches-pi5    : Apply all patches for Raspberry Pi 5"
 	@echo "patches-pi4    : Apply all patches for Raspberry Pi 4"
 	@echo "kernel         : Build kernel"
-	@echo "overlay        : Build Raspberry Pi 5 overlay"
+	@echo "overlay        : (Not used - official sbc-raspberrypi:v0.1.9 overlay includes CM5 DTBs)"
 	@echo "imager         : Build imager docker image"
 	@echo "installer-base : Build installer-base docker image"
 	@echo "kern_initramfs : Build kernel and initramfs"
@@ -56,14 +54,13 @@ help:
 #
 .PHONY: checkouts checkouts-clean
 checkouts:
-	git clone -c advice.detachedHead=false --branch "$(PKG_VERSION)" "$(PKG_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/pkgs"
+	git clone "$(PKG_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/pkgs"
+	git -C "$(CHECKOUTS_DIRECTORY)/pkgs" checkout "$(PKG_VERSION)"
 	git clone -c advice.detachedHead=false --branch "$(TALOS_VERSION)" "$(TALOS_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/talos"
-	git clone -c advice.detachedHead=false --branch "$(SBCOVERLAY_VERSION)" "$(SBCOVERLAY_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi5"
 
 checkouts-clean:
 	rm -rf "$(CHECKOUTS_DIRECTORY)/pkgs"
 	rm -rf "$(CHECKOUTS_DIRECTORY)/talos"
-	rm -rf "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi5"
 
 #
 # Patches
@@ -71,13 +68,11 @@ checkouts-clean:
 .PHONY: patches-pkgs patches-talos patches patches-pkgs-4 patches-pi4 patches-pi5
 patches-pkgs:
 	cd "$(CHECKOUTS_DIRECTORY)/pkgs" && \
-		git am "$(PATCHES_DIRECTORY)/siderolabs/pkgs/0001-Patched-for-Raspberry-Pi-5.patch"
-	cd "$(CHECKOUTS_DIRECTORY)/pkgs" && \
-		git apply $(PATCHES_DIRECTORY)/siderolabs/pkgs/0003-nf-bridge.patch
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/pkgs/0001-Patched-for-Raspberry-Pi-5.patch"
 
 patches-talos:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
-		git am "$(PATCHES_DIRECTORY)/siderolabs/talos/0001-Patched-for-Raspberry-Pi-5.patch"
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0002-Makefile.patch"
 
 patches-pi5: patches-pkgs patches-talos
 
@@ -100,19 +95,6 @@ kernel:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PLATFORM=linux/arm64 \
 			kernel
-
-#
-# Overlay
-#
-.PHONY: overlay
-overlay:
-	@echo SBCOVERLAY_TAG = $(SBCOVERLAY_TAG)
-	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi5" && \
-		$(MAKE) \
-			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) IMAGE_TAG=$(SBCOVERLAY_TAG) PUSH=$(PUSH) \
-			PKGS_PREFIX=$(REGISTRY)/$(REGISTRY_USERNAME) PKGS=$(PKGS_TAG) \
-			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 \
-			sbc-raspberrypi5
 
 .PHONY: imager
 imager:
@@ -152,7 +134,7 @@ installer-pi5:
 			$(ASSET_TYPE) --arch arm64 \
 			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
 			--overlay-name="rpi5" \
-			--overlay-image="$(REGISTRY)/$(REGISTRY_USERNAME)/sbc-raspberrypi5:$(SBCOVERLAY_TAG)" \
+			--overlay-image="$(SBCOVERLAY_PI5_IMAGE)" \
 			$(EXTENSION_ARGS)
 
 .PHONY: installer-pi4
@@ -181,7 +163,7 @@ release:
 		docker push $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG)
 
 .PHONY: pi5
-pi5: checkouts-clean checkouts patches-pi5 kernel kern_initramfs installer-base imager overlay installer-pi5
+pi5: checkouts-clean checkouts patches-pi5 kernel kern_initramfs installer-base imager installer-pi5
 
 .PHONY: pi4
 pi4: checkouts-clean checkouts patches-pi4 kernel kern_initramfs installer-base imager installer-pi4

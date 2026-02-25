@@ -61,9 +61,6 @@ jobs:
       - name: Imager
         run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} imager
 
-      - name: Overlay
-        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} overlay
-
       - name: Build installer image (with extensions)
         run: |
           make RPI_MODEL=${{ env.RPI_MODEL }} \
