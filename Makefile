@@ -141,7 +141,7 @@ installer-pi5:
 			run --rm -t -v ./_out:/out -v /dev:/dev --privileged $(REGISTRY)/$(REGISTRY_USERNAME)/imager:$(TALOS_TAG) \
 			$(ASSET_TYPE) --arch arm64 \
 			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
-			--overlay-name="rpi5" \
+			--overlay-name="rpi_generic" \
 			--overlay-image="$(SBCOVERLAY_PI5_IMAGE)" \
 			$(OVERLAY_OPTION_ARGS) \
 			$(KERNEL_ARG_ARGS) \
