@@ -17,7 +17,7 @@ env:
   # e.g: configTxtAppend=dtoverlay=vc4-kms-v3d,cma-256
   OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512'
   # Space-separated extra kernel cmdline args, prefix with - to remove a default, e.g: -console console=tty0
-  KERNEL_ARGS: ''
+  KERNEL_ARGS: 'console=tty0'
 
 jobs:
   build:
