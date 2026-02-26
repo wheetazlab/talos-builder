@@ -60,7 +60,7 @@ jobs:
         run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kernel
 
       - name: Kernel initramfs
-        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kern_initramfs
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} TARGET_ARGS="--no-cache" kern_initramfs
 
       - name: Installer base
         run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} TARGET_ARGS="--no-cache" installer-base
@@ -112,10 +112,7 @@ jobs:
           
           ### Extensions included
           
-          - \`iscsi-tools\` ${{ env.EXTENSION_ISCSI_IMAGE }}
-          - \`util-linux-tools\` ${{ env.EXTENSION_UTIL_LINUX_IMAGE }}
-          - \`vc4\` ${{ env.EXTENSION_VC4_IMAGE }}
-          - \`v4l-uvc-drivers\` ${{ env.EXTENSION_V4L_UVC_DRIVERS_IMAGE }}
+          $(echo "${{ env.EXTENSIONS }}" | tr ' ' '\n' | grep -v '^$' | sed 's|.*/\([^:@]*\):.*|- `\1`|' | sort -u || echo "_(none)_")
           
           ### config.txt overlay options
           

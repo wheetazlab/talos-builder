@@ -130,6 +130,7 @@ kern_initramfs:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
+			TARGET_ARGS="$(TARGET_ARGS)" \
 			kernel initramfs
 
 #
