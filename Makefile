@@ -158,10 +158,12 @@ installer-pi5 installer-pi4: installer
 # Release
 #
 .PHONY: release
+# The installer image is already pushed as installer:$(TAG) by 'crane push' in CI.
+# This target verifies the image exists in the registry.
+# NOTE: We no longer pull installer:$(TALOS_TAG) and retag — that pulled a stale
+#       dirty-tagged image from a previous build run, overwriting the correct image.
 release:
-	docker pull $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TALOS_TAG) && \
-		docker tag $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TALOS_TAG) $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG) && \
-		docker push $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG)
+	crane digest $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG)
 
 .PHONY: pi5
 pi5: checkouts-clean checkouts patches-pi5 kernel kern_initramfs installer-base imager installer

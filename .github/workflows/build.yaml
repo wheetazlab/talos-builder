@@ -96,7 +96,10 @@ jobs:
 
       - name: Release (tag installer image with git tag)
         if: startsWith(github.ref, 'refs/tags/v')
-        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} release
+        run: |
+          # crane push already pushed the image as github.ref_name; nothing more to do.
+          # (make release would pull a stale :vX.Y.Z-dirty tag and overwrite the correct image)
+          crane digest ${{ env.REGISTRY }}/${{ env.REGISTRY_USERNAME }}/installer:${{ github.ref_name }}
 
       - name: Create GitHub Release
         env:
