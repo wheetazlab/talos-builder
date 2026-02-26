@@ -11,13 +11,13 @@ env:
   # Format: space-separated list of image:tag references (digests resolved at build time).
   EXTENSION_ISCSI_IMAGE: ghcr.io/siderolabs/iscsi-tools:v0.2.0
   EXTENSION_UTIL_LINUX_IMAGE: ghcr.io/siderolabs/util-linux-tools:2.41.2
-  EXTENSION_VC4_IMAGE: ghcr.io/siderolabs/vc4:v1.12.4
-  EXTENSION_V4L_UVC_DRIVERS_IMAGE: ghcr.io/siderolabs/v4l-uvc-drivers:v1.12.4
+  #EXTENSION_VC4_IMAGE: ghcr.io/siderolabs/vc4:v1.12.4
+  #EXTENSION_V4L_UVC_DRIVERS_IMAGE: ghcr.io/siderolabs/v4l-uvc-drivers:v1.12.4
   # Space-separated overlay options appended AFTER the default dtparam=i2c_arm=on.
   # e.g: configTxtAppend=dtoverlay=vc4-kms-v3d,cma-256
-  OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512'
+  #OVERLAY_OPTIONS: 'configTxtAppend=dtoverlay=vc4-kms-v3d,cma-512'
   # Space-separated extra kernel cmdline args, prefix with - to remove a default, e.g: -console console=tty0
-  KERNEL_ARGS: 'console=tty0'
+  #KERNEL_ARGS: 'console=tty0'
 
 jobs:
   build:
@@ -63,10 +63,10 @@ jobs:
         run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kern_initramfs
 
       - name: Installer base
-        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} installer-base
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} TARGET_ARGS="--no-cache" installer-base
 
       - name: Imager
-        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} imager
+        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} TARGET_ARGS="--no-cache" imager
 
       - name: Build installer image (with extensions)
         run: |
