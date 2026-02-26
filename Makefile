@@ -110,6 +110,7 @@ imager:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
+			TARGET_ARGS="$(TARGET_ARGS)" \
 			imager
 
 .PHONY: installer-base
@@ -119,6 +120,7 @@ installer-base:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
+			TARGET_ARGS="$(TARGET_ARGS)" \
 			installer-base
 
 .PHONY: kern_initramfs
