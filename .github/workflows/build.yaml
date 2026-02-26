@@ -81,7 +81,7 @@ jobs:
           # Push the installer OCI tarball so it can be used for upgrades
           crane push \
             ./checkouts/talos/_out/installer-arm64.tar \
-            ${{ env.REGISTRY }}/${{ env.REGISTRY_USERNAME }}/installer:$(cd checkouts/talos && git describe --tag --always --dirty --match v[0-9]*)
+            ${{ env.REGISTRY }}/${{ env.REGISTRY_USERNAME }}/installer:${{ github.ref_name }}
 
       - name: Build metal disk image (for fresh installs)
         run: |

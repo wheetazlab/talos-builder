@@ -143,7 +143,7 @@ installer:
 			run --rm -t -v ./_out:/out -v /dev:/dev --privileged $(REGISTRY)/$(REGISTRY_USERNAME)/imager:$(TALOS_TAG) \
 			$(ASSET_TYPE) --arch arm64 \
 			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
-			--overlay-name="rpi_generic" \
+			--overlay-name="rpi_5" \
 			--overlay-image="$(SBCOVERLAY_IMAGE)" \
 			--overlay-option="configTxtAppend=$(CONFIG_TXT)" \
 			$(OVERLAY_OPTION_ARGS) \
