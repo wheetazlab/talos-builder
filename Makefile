@@ -110,6 +110,7 @@ imager:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
+			TAG=$(TALOS_VERSION) \
 			TARGET_ARGS="$(TARGET_ARGS)" \
 			imager
 
@@ -120,6 +121,7 @@ installer-base:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
+			TAG=$(TALOS_VERSION) \
 			TARGET_ARGS="$(TARGET_ARGS)" \
 			installer-base
 
@@ -130,6 +132,7 @@ kern_initramfs:
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
+			TAG=$(TALOS_VERSION) \
 			TARGET_ARGS="$(TARGET_ARGS)" \
 			kernel initramfs
 
@@ -143,9 +146,9 @@ kern_initramfs:
 installer:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		docker \
-			run --rm -t -v ./_out:/out -v /dev:/dev --privileged $(REGISTRY)/$(REGISTRY_USERNAME)/imager:$(TALOS_TAG) \
+			run --rm -t -v ./_out:/out -v /dev:/dev --privileged $(REGISTRY)/$(REGISTRY_USERNAME)/imager:$(TALOS_VERSION) \
 			$(ASSET_TYPE) --arch arm64 \
-			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_TAG)" \
+			--base-installer-image="$(REGISTRY)/$(REGISTRY_USERNAME)/installer-base:$(TALOS_VERSION)" \
 			--overlay-name="rpi_5" \
 			--overlay-image="$(SBCOVERLAY_IMAGE)" \
 			--overlay-option="configTxtAppend=$(CONFIG_TXT)" \
