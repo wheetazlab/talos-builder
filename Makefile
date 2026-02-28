@@ -111,6 +111,7 @@ imager:
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
 			TAG=$(TALOS_VERSION) \
+			ABBREV_TAG=$(TALOS_VERSION) \
 			TARGET_ARGS="$(TARGET_ARGS)" \
 			imager
 
@@ -122,6 +123,7 @@ installer-base:
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
 			TAG=$(TALOS_VERSION) \
+			ABBREV_TAG=$(TALOS_VERSION) \
 			TARGET_ARGS="$(TARGET_ARGS)" \
 			installer-base
 
@@ -133,6 +135,7 @@ kern_initramfs:
 			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
 			TAG=$(TALOS_VERSION) \
+			ABBREV_TAG=$(TALOS_VERSION) \
 			TARGET_ARGS="$(TARGET_ARGS)" \
 			kernel initramfs
 
