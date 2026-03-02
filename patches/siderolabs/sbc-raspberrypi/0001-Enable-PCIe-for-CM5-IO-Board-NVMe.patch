@@ -1,0 +1,8 @@
+--- a/installers/rpi_5/src/config.txt
++++ b/installers/rpi_5/src/config.txt
+@@ -17,3 +17,5 @@
+ [pi5]
+ enable_uart=0
+ [all]
++# Enable PCIe for CM5 IO Board M.2 NVMe slot (also M.2 HAT+ on RPi 5B).
++dtparam=pciex1

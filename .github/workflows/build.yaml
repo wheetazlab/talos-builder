@@ -56,7 +56,7 @@ jobs:
       - name: Prepare (checkouts & patches)
         run: make RPI_MODEL=${{ env.RPI_MODEL }} checkouts patches-pi5
 
-      - name: Build overlay (sbc-raspberrypi with rpi_5_defconfig for BCM2712 PCIe)
+      - name: Build overlay (sbc-raspberrypi with dtparam=pciex1 for CM5 IO Board M.2)
         run: |
           make RPI_MODEL=${{ env.RPI_MODEL }} \
             REGISTRY=${{ env.REGISTRY }} \

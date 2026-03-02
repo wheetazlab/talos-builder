@@ -23,8 +23,10 @@ OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
 KERNEL_ARGS ?=
 KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 
-# Build the official sbc-raspberrypi overlay from source with rpi_5_defconfig
-# (rpi_arm64_defconfig has no BCM2712 PCIe driver; NVMe on CM5 IO Board is invisible)
+# Add dtparam=pciex1 to the sbc-raspberrypi overlay config.txt so the BCM2712
+# firmware enables the PCIe lane to the M.2 slot before U-Boot runs.
+# rpi_arm64_defconfig + patch 0008 (from official sbc-raspberrypi) already
+# enables CONFIG_NVME_PCI=y; the firmware-provided DTB handles BCM2712 PCIe init.
 SBCOVERLAY_REPOSITORY = https://github.com/siderolabs/sbc-raspberrypi.git
 SBCOVERLAY_VERSION ?= v0.2.0
 SBCOVERLAY_CUSTOM_TAG = $(SBCOVERLAY_VERSION)-rpi5-uboot
@@ -48,7 +50,7 @@ help:
 	@echo "patches-pi5    : Apply all patches for Raspberry Pi 5"
 	@echo "patches-pi4    : Apply all patches for Raspberry Pi 4"
 	@echo "kernel         : Build kernel"
-	@echo "overlay        : Build sbc-raspberrypi overlay from source (rpi_5_defconfig for BCM2712 PCIe)"
+	@echo "overlay        : Build sbc-raspberrypi overlay from source (adds dtparam=pciex1 to config.txt for CM5 M.2)"
 	@echo "imager         : Build imager docker image"
 	@echo "installer-base : Build installer-base docker image"
 	@echo "kern_initramfs : Build kernel and initramfs"
@@ -90,7 +92,7 @@ patches-talos:
 
 patches-sbc:
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Use-rpi5-defconfig-for-BCM2712-PCIe-NVMe.patch"
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch"
 
 patches-pi5: patches-pkgs patches-talos patches-sbc
 
@@ -167,8 +169,8 @@ kern_initramfs:
 # Installer/Image
 #
 # CONFIG_TXT (dtparam=i2c_arm=on) is always appended so I2C is available out
-# of the box. dtparam=pciex1 is injected directly into the overlay config.txt
-# by patches/siderolabs/sbc-raspberrypi/0001-Use-rpi5-defconfig-for-BCM2712-PCIe-NVMe.patch.
+# of the box. dtparam=pciex1 is injected into config.txt at overlay build time
+# by patches/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch.
 # Any OVERLAY_OPTIONS passed via the environment or build.yaml are additive.
 .PHONY: installer
 installer:
