@@ -1,0 +1,28 @@
+diff --git a/artifacts/u-boot/patches/0009-add-bcm2712-pcie-compatible.patch b/artifacts/u-boot/patches/0009-add-bcm2712-pcie-compatible.patch
+new file mode 100644
+index 0000000..78e2daa
+--- /dev/null
++++ b/artifacts/u-boot/patches/0009-add-bcm2712-pcie-compatible.patch
+@@ -0,0 +1,10 @@
++--- a/drivers/pci/pcie_brcmstb.c
+++++ b/drivers/pci/pcie_brcmstb.c
++@@ -557,6 +557,7 @@
++ static const struct udevice_id brcm_pcie_ids[] = {
++ 	{ .compatible = "brcm,bcm2711-pcie" },
+++	{ .compatible = "brcm,bcm2712-pcie" },
++ 	{ }
++ };
++ 
++ U_BOOT_DRIVER(pcie_brcm_base) = {
+diff --git a/artifacts/u-boot/pkg.yaml b/artifacts/u-boot/pkg.yaml
+index e677f76..8f768ab 100644
+--- a/artifacts/u-boot/pkg.yaml
++++ b/artifacts/u-boot/pkg.yaml
+@@ -28,6 +28,7 @@ steps:
+         patch -p1 < /pkg/patches/0006-nvme-Use-pointer-for-CPU-addressed-buffers.patch
+         patch -p1 < /pkg/patches/0007-nvme-translate-virtual-addresses-into-the-bus-s-addr.patch
+         patch -p1 < /pkg/patches/0008-enable-nvme-and-fixup-efi-boot.patch
++        patch -p1 < /pkg/patches/0009-add-bcm2712-pcie-compatible.patch
+ 
+         make rpi_arm64_defconfig
+     build:

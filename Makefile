@@ -23,10 +23,12 @@ OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
 KERNEL_ARGS ?=
 KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 
-# Add dtparam=pciex1 to the sbc-raspberrypi overlay config.txt so the BCM2712
-# firmware enables the PCIe lane to the M.2 slot before U-Boot runs.
-# rpi_arm64_defconfig + patch 0008 (from official sbc-raspberrypi) already
-# enables CONFIG_NVME_PCI=y; the firmware-provided DTB handles BCM2712 PCIe init.
+# Two patches are applied to sbc-raspberrypi v0.2.0 before the overlay build:
+# 0001: Adds dtparam=pciex1 to config.txt so the RPi firmware enables the
+#       BCM2712 PCIe lane (M.2 slot) and passes it to U-Boot in the DT.
+# 0002: Adds brcm,bcm2712-pcie to U-Boot pcie_brcmstb driver's match table
+#       (via a new U-Boot patch 0009) so the driver binds to the BCM2712 PCIe
+#       node and NVMe enumeration succeeds on RPi5/CM5.
 SBCOVERLAY_REPOSITORY = https://github.com/siderolabs/sbc-raspberrypi.git
 SBCOVERLAY_VERSION ?= v0.2.0
 SBCOVERLAY_CUSTOM_TAG = $(SBCOVERLAY_VERSION)-rpi5-uboot
@@ -93,6 +95,8 @@ patches-talos:
 patches-sbc:
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch"
+	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-Add-BCM2712-PCIe-driver-support.patch"
 
 patches-pi5: patches-pkgs patches-talos patches-sbc
 
@@ -110,7 +114,7 @@ patches-sbc-only: patches-sbc
 # Kernel
 #
 #
-# Overlay (sbc-raspberrypi built from source with rpi_5_defconfig)
+# Overlay (sbc-raspberrypi built from source with rpi_arm64_defconfig + BCM2712 PCIe fix)
 #
 .PHONY: overlay
 overlay:
