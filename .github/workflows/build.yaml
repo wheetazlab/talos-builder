@@ -56,6 +56,13 @@ jobs:
       - name: Prepare (checkouts & patches)
         run: make RPI_MODEL=${{ env.RPI_MODEL }} checkouts patches-pi5
 
+      - name: Build overlay (sbc-raspberrypi with rpi_5_defconfig for BCM2712 PCIe)
+        run: |
+          make RPI_MODEL=${{ env.RPI_MODEL }} \
+            REGISTRY=${{ env.REGISTRY }} \
+            REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} \
+            overlay
+
       - name: Kernel
         run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kernel
 

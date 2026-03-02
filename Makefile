@@ -12,7 +12,7 @@ TAG ?= $(shell git describe --tags --exact-match)
 
 SED ?= sed
 ASSET_TYPE ?= installer
-CONFIG_TXT = dtparam=i2c_arm=on\ndtparam=pciex1
+CONFIG_TXT = dtparam=i2c_arm=on
 
 EXTENSIONS ?=
 EXTENSION_ARGS = $(foreach ext,$(EXTENSIONS),--system-extension-image $(ext))
@@ -23,7 +23,12 @@ OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
 KERNEL_ARGS ?=
 KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 
-SBCOVERLAY_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.2.0
+# Build the official sbc-raspberrypi overlay from source with rpi_5_defconfig
+# (rpi_arm64_defconfig has no BCM2712 PCIe driver; NVMe on CM5 IO Board is invisible)
+SBCOVERLAY_REPOSITORY = https://github.com/siderolabs/sbc-raspberrypi.git
+SBCOVERLAY_VERSION ?= v0.2.0
+SBCOVERLAY_CUSTOM_TAG = $(SBCOVERLAY_VERSION)-rpi5-uboot
+SBCOVERLAY_IMAGE ?= $(REGISTRY)/$(REGISTRY_USERNAME)/sbc-raspberrypi:$(SBCOVERLAY_CUSTOM_TAG)
 
 PKG_REPOSITORY = https://github.com/siderolabs/pkgs.git
 TALOS_REPOSITORY = https://github.com/siderolabs/talos.git
@@ -43,7 +48,7 @@ help:
 	@echo "patches-pi5    : Apply all patches for Raspberry Pi 5"
 	@echo "patches-pi4    : Apply all patches for Raspberry Pi 4"
 	@echo "kernel         : Build kernel"
-	@echo "overlay        : (Not used - official sbc-raspberrypi:v0.2.0 overlay includes CM5 DTBs)"
+	@echo "overlay        : Build sbc-raspberrypi overlay from source (rpi_5_defconfig for BCM2712 PCIe)"
 	@echo "imager         : Build imager docker image"
 	@echo "installer-base : Build installer-base docker image"
 	@echo "kern_initramfs : Build kernel and initramfs"
@@ -62,10 +67,12 @@ checkouts:
 	git clone "$(PKG_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/pkgs"
 	git -C "$(CHECKOUTS_DIRECTORY)/pkgs" checkout "$(PKG_VERSION)"
 	git clone -c advice.detachedHead=false --branch "$(TALOS_VERSION)" "$(TALOS_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/talos"
+	git clone -c advice.detachedHead=false --branch "$(SBCOVERLAY_VERSION)" "$(SBCOVERLAY_REPOSITORY)" "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi"
 
 checkouts-clean:
 	rm -rf "$(CHECKOUTS_DIRECTORY)/pkgs"
 	rm -rf "$(CHECKOUTS_DIRECTORY)/talos"
+	rm -rf "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi"
 
 #
 # Patches
@@ -81,7 +88,11 @@ patches-talos:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0002-Makefile.patch"
 
-patches-pi5: patches-pkgs patches-talos
+patches-sbc:
+	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Use-rpi5-defconfig-for-BCM2712-PCIe-NVMe.patch"
+
+patches-pi5: patches-pkgs patches-talos patches-sbc
 
 patches-pkgs-4:
 	cd "$(CHECKOUTS_DIRECTORY)/pkgs" && \
@@ -89,12 +100,25 @@ patches-pkgs-4:
 
 patches-pi4: patches-pkgs patches-pkgs-4 patches-talos
 
-# Backwards-compatible alias
+# Backwards-compatible aliases
 patches: patches-pi5
+patches-sbc-only: patches-sbc
 
 #
 # Kernel
 #
+#
+# Overlay (sbc-raspberrypi built from source with rpi_5_defconfig)
+#
+.PHONY: overlay
+overlay:
+	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
+		$(MAKE) \
+			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) \
+			TAG=$(SBCOVERLAY_CUSTOM_TAG) PUSH=$(PUSH) \
+			PLATFORM=linux/arm64 \
+			sbc-raspberrypi
+
 .PHONY: kernel
 kernel:
 	cd "$(CHECKOUTS_DIRECTORY)/pkgs" && \
@@ -142,9 +166,10 @@ kern_initramfs:
 #
 # Installer/Image
 #
-# CONFIG_TXT (dtparam=i2c_arm=on by default) is always prepended so I2C is
-# available out of the box. Any OVERLAY_OPTIONS passed via the environment
-# or build.yaml are appended after, keeping them fully additive.
+# CONFIG_TXT (dtparam=i2c_arm=on) is always appended so I2C is available out
+# of the box. dtparam=pciex1 is injected directly into the overlay config.txt
+# by patches/siderolabs/sbc-raspberrypi/0001-Use-rpi5-defconfig-for-BCM2712-PCIe-NVMe.patch.
+# Any OVERLAY_OPTIONS passed via the environment or build.yaml are additive.
 .PHONY: installer
 installer:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
@@ -175,7 +200,7 @@ release:
 	crane digest $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG)
 
 .PHONY: pi5
-pi5: checkouts-clean checkouts patches-pi5 kernel kern_initramfs installer-base imager installer
+pi5: checkouts-clean checkouts patches-pi5 overlay kernel kern_initramfs installer-base imager installer
 
 .PHONY: pi4
 pi4: checkouts-clean checkouts patches-pi4 kernel kern_initramfs installer-base imager installer
