@@ -12,7 +12,7 @@ TAG ?= $(shell git describe --tags --exact-match)
 
 SED ?= sed
 ASSET_TYPE ?= installer
-CONFIG_TXT = dtparam=i2c_arm=on
+CONFIG_TXT = dtparam=i2c_arm=on\ndtparam=pciex1
 
 EXTENSIONS ?=
 EXTENSION_ARGS = $(foreach ext,$(EXTENSIONS),--system-extension-image $(ext))
@@ -23,7 +23,7 @@ OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
 KERNEL_ARGS ?=
 KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 
-SBCOVERLAY_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.1.9
+SBCOVERLAY_IMAGE ?= ghcr.io/siderolabs/sbc-raspberrypi:v0.2.0
 
 PKG_REPOSITORY = https://github.com/siderolabs/pkgs.git
 TALOS_REPOSITORY = https://github.com/siderolabs/talos.git
@@ -43,7 +43,7 @@ help:
 	@echo "patches-pi5    : Apply all patches for Raspberry Pi 5"
 	@echo "patches-pi4    : Apply all patches for Raspberry Pi 4"
 	@echo "kernel         : Build kernel"
-	@echo "overlay        : (Not used - official sbc-raspberrypi:v0.1.9 overlay includes CM5 DTBs)"
+	@echo "overlay        : (Not used - official sbc-raspberrypi:v0.2.0 overlay includes CM5 DTBs)"
 	@echo "imager         : Build imager docker image"
 	@echo "installer-base : Build installer-base docker image"
 	@echo "kern_initramfs : Build kernel and initramfs"
