@@ -1,20 +1,19 @@
 --- a/artifacts/u-boot/pkg.yaml
 +++ b/artifacts/u-boot/pkg.yaml
-@@ -29,8 +29,8 @@
+@@ -27,9 +27,8 @@
          patch -p1 < /pkg/patches/0005-nvme-improve-readability-of-nvme_setup_prps.patch
          patch -p1 < /pkg/patches/0006-nvme-Use-pointer-for-CPU-addressed-buffers.patch
          patch -p1 < /pkg/patches/0007-nvme-translate-virtual-addresses-into-the-bus-s-addr.patch
 -        patch -p1 < /pkg/patches/0008-enable-nvme-and-fixup-efi-boot.patch
+ 
 -        make rpi_arm64_defconfig
-+        # 0008 modifies configs/rpi_arm64_defconfig; skip for rpi_5_defconfig.
 +        make rpi_5_defconfig
      build:
        # rpi_generic
        - |
 --- a/installers/rpi_5/src/config.txt
 +++ b/installers/rpi_5/src/config.txt
-@@ -16,4 +16,6 @@
- # Disable UART for Raspberry Pi 5 to avoid U-boot compatibility issue.
+@@ -17,3 +17,5 @@
  [pi5]
  enable_uart=0
  [all]
