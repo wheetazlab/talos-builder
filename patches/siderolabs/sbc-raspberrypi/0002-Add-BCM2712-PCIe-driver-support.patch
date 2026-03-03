@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/artifacts/u-boot/patches/0009-bcm2712-pcie-header-updates.patch
-@@ -0,0 +1,83 @@
+@@ -0,0 +1,82 @@
 +--- a/arch/arm/mach-bcm283x/include/mach/acpi/bcm2711.h
 ++++ b/arch/arm/mach-bcm283x/include/mach/acpi/bcm2711.h
 +@@ -45,19 +45,46 @@
@@ -51,10 +51,9 @@
 + #define PCIE_MEM_WIN0_LO(win)	\
 + 		PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO + ((win) * 4)
 + 
-+@@ -70,6 +97,7 @@
++@@ -64,5 +91,6 @@
 + #define PCIE_MEM_WIN0_HI(win)	\
 + 		PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI + ((win) * 4)
-+ 
 ++#define PCIE_MISC_RC_BAR4_CONFIG_LO               0x40d4
 + #define PCIE_MISC_RC_BAR1_CONFIG_LO               0x402c
 + #define  RC_BAR1_CONFIG_LO_SIZE_MASK                0x1f
