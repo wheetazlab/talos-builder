@@ -92,9 +92,7 @@ patches-sbc:
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch"
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-Add-BCM2712-PCIe-driver-support.patch"
-	cp "$(PATCHES_DIRECTORY)"/siderolabs/u-boot/*.patch \
-		"$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi/artifacts/u-boot/patches/"
-
+        cp "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0009-bcm2712-support.patch" \
 patches-pi5: patches-sbc
 
 patches-pi4:
