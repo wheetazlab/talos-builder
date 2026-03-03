@@ -1,13 +1,10 @@
 --- a/artifacts/u-boot/pkg.yaml
 +++ b/artifacts/u-boot/pkg.yaml
-@@ -28,6 +28,10 @@ steps:
+@@ -28,6 +28,7 @@ steps:
          patch -p1 < /pkg/patches/0006-nvme-Use-pointer-for-CPU-addressed-buffers.patch
          patch -p1 < /pkg/patches/0007-nvme-translate-virtual-addresses-into-the-bus-s-addr.patch
          patch -p1 < /pkg/patches/0008-enable-nvme-and-fixup-efi-boot.patch
-+        patch -p1 --ignore-whitespace < /pkg/patches/0009-bcm2712-pcie-header-updates.patch
-+        patch -p1 --ignore-whitespace < /pkg/patches/0010-bcm2712-pcie-mmu-map.patch
-+        patch -p1 --ignore-whitespace < /pkg/patches/0011-bcm2712-pcie-driver.patch
-+        patch -p1 --ignore-whitespace < /pkg/patches/0012-bcm2712-rpi-arm64-defconfig.patch
++        patch -p1 --ignore-whitespace < /pkg/patches/0009-bcm2712-support.patch
  
          make rpi_arm64_defconfig
      build:
