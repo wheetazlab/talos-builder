@@ -63,9 +63,6 @@ jobs:
             REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} \
             overlay
 
-      - name: Kernel
-        run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} kernel
-
       - name: Kernel initramfs
         run: make RPI_MODEL=${{ env.RPI_MODEL }} REGISTRY=${{ env.REGISTRY }} REGISTRY_USERNAME=${{ env.REGISTRY_USERNAME }} TARGET_ARGS="--no-cache" kern_initramfs
 
