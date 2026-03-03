@@ -86,12 +86,14 @@ checkouts-clean:
 #
 # Patches
 #
-.PHONY: patches patches-pi4 patches-pi5
+.PHONY: patches patches-pi4 patches-pi5 patches-sbc
 patches-sbc:
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch"
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-Add-BCM2712-PCIe-driver-support.patch"
+	cp "$(PATCHES_DIRECTORY)"/siderolabs/u-boot/*.patch \
+		"$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi/artifacts/u-boot/patches/"
 
 patches-pi5: patches-sbc
 
