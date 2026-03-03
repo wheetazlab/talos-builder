@@ -26,9 +26,11 @@ KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 # Two patches are applied to sbc-raspberrypi v0.2.0 before the overlay build:
 # 0001: Adds dtparam=pciex1 to config.txt so the RPi firmware enables the
 #       BCM2712 PCIe lane (M.2 slot) and passes it to U-Boot in the DT.
-# 0002: Adds brcm,bcm2712-pcie to U-Boot pcie_brcmstb driver's match table
-#       (via a new U-Boot patch 0009) so the driver binds to the BCM2712 PCIe
-#       node and NVMe enumeration succeeds on RPi5/CM5.
+# 0002: Full BCM2712 U-Boot PCIe driver support (per-chip config struct,
+#       PERST#/bridge callbacks, SerDes PLL init) so NVMe enumerates on CM5.
+#
+# No custom kernel build required — upstream siderolabs kernel is used directly.
+# nvme.ko (CONFIG_BLK_DEV_NVME=m) is already bundled in the Talos initramfs.
 SBCOVERLAY_REPOSITORY = https://github.com/siderolabs/sbc-raspberrypi.git
 SBCOVERLAY_VERSION ?= v0.2.0
 SBCOVERLAY_CUSTOM_TAG = $(SBCOVERLAY_VERSION)-rpi5-uboot
@@ -42,6 +44,9 @@ PATCHES_DIRECTORY := $(PWD)/patches
 
 PKGS_TAG = $(shell cd $(CHECKOUTS_DIRECTORY)/pkgs && git describe --tag --always --dirty --match v[0-9]\*)
 TALOS_TAG = $(shell cd $(CHECKOUTS_DIRECTORY)/talos && git describe --tag --always --dirty --match v[0-9]\*)
+
+# Upstream siderolabs kernel — no custom kernel compile needed
+UPSTREAM_KERNEL_IMAGE = ghcr.io/siderolabs/kernel:$(PKGS_TAG)
 
 #
 # Help
@@ -81,14 +86,8 @@ checkouts-clean:
 #
 # Patches
 #
-.PHONY: patches-pkgs patches-talos patches patches-pkgs-4 patches-pi4 patches-pi5
-patches-pkgs:
-	cd "$(CHECKOUTS_DIRECTORY)/pkgs" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/pkgs/0001-Patched-for-Raspberry-Pi-5.patch"
-
+.PHONY: patches-talos patches patches-pi4 patches-pi5
 patches-talos:
-	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0001-remove-nvme-ko-from-modules-list.patch"
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0002-Makefile.patch"
 
@@ -98,13 +97,9 @@ patches-sbc:
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-Add-BCM2712-PCIe-driver-support.patch"
 
-patches-pi5: patches-pkgs patches-talos patches-sbc
+patches-pi5: patches-talos patches-sbc
 
-patches-pkgs-4:
-	cd "$(CHECKOUTS_DIRECTORY)/pkgs" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/pkgs/0002-Patched-for-Raspberry-Pi-4.patch"
-
-patches-pi4: patches-pkgs patches-pkgs-4 patches-talos
+patches-pi4: patches-talos
 
 # Backwards-compatible aliases
 patches: patches-pi5
@@ -138,7 +133,7 @@ imager:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		$(MAKE) \
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
-			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
+			PKG_KERNEL=$(UPSTREAM_KERNEL_IMAGE) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
 			TAG=$(TALOS_VERSION) \
 			ABBREV_TAG=$(TALOS_VERSION) \
@@ -150,7 +145,7 @@ installer-base:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		$(MAKE) \
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
-			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
+			PKG_KERNEL=$(UPSTREAM_KERNEL_IMAGE) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
 			TAG=$(TALOS_VERSION) \
 			ABBREV_TAG=$(TALOS_VERSION) \
@@ -162,7 +157,7 @@ kern_initramfs:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
 		$(MAKE) \
 			REGISTRY=$(REGISTRY) USERNAME=$(REGISTRY_USERNAME) PUSH=$(PUSH) \
-			PKG_KERNEL=$(REGISTRY)/$(REGISTRY_USERNAME)/kernel:$(PKGS_TAG) \
+			PKG_KERNEL=$(UPSTREAM_KERNEL_IMAGE) \
 			INSTALLER_ARCH=arm64 PLATFORM=linux/arm64 SED=$(SED) \
 			TAG=$(TALOS_VERSION) \
 			ABBREV_TAG=$(TALOS_VERSION) \
@@ -206,7 +201,7 @@ release:
 	crane digest $(REGISTRY)/$(REGISTRY_USERNAME)/installer:$(TAG)
 
 .PHONY: pi5
-pi5: checkouts-clean checkouts patches-pi5 overlay kernel kern_initramfs installer-base imager installer
+pi5: checkouts-clean checkouts patches-pi5 overlay kern_initramfs installer-base imager installer
 
 .PHONY: pi4
 pi4: checkouts-clean checkouts patches-pi4 kernel kern_initramfs installer-base imager installer
