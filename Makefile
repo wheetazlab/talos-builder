@@ -86,20 +86,16 @@ checkouts-clean:
 #
 # Patches
 #
-.PHONY: patches-talos patches patches-pi4 patches-pi5
-patches-talos:
-	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/talos/0002-Makefile.patch"
-
+.PHONY: patches patches-pi4 patches-pi5
 patches-sbc:
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch"
 	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
 		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-Add-BCM2712-PCIe-driver-support.patch"
 
-patches-pi5: patches-talos patches-sbc
+patches-pi5: patches-sbc
 
-patches-pi4: patches-talos
+patches-pi4:
 
 # Backwards-compatible aliases
 patches: patches-pi5
