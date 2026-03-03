@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/artifacts/u-boot/patches/0009-bcm2712-pcie-header-updates.patch
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,81 @@
 +--- a/arch/arm/mach-bcm283x/include/mach/acpi/bcm2711.h
 ++++ b/arch/arm/mach-bcm283x/include/mach/acpi/bcm2711.h
 +@@ -45,19 +45,46 @@
@@ -78,8 +78,7 @@
 + #define PCIE_EXT_CFG_INDEX                    0x9000
 + /* A small window pointing at the ECAM of the device selected by CFG_INDEX */
 + #define PCIE_EXT_CFG_DATA                     0x8000
-+@@ -124,3 +154,4 @@
-+ 
++@@ -125,2 +155,3 @@
 + #define PCIE_RGR1_SW_INIT_1_INIT_MASK                           0x2
 + #define PCIE_RGR1_SW_INIT_1_PERST_MASK                          0x1
 ++#define PCIE_RGR1_SW_INIT_1_PERSTB_MASK                         0x4
