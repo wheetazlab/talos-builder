@@ -1,6 +1,6 @@
 --- /dev/null
 +++ b/artifacts/u-boot/patches/0009-bcm2712-pcie-header-updates.patch
-@@ -0,0 +1,167 @@
+@@ -0,0 +1,83 @@
 +--- a/arch/arm/mach-bcm283x/include/mach/acpi/bcm2711.h
 ++++ b/arch/arm/mach-bcm283x/include/mach/acpi/bcm2711.h
 +@@ -45,24 +45,51 @@
@@ -86,7 +86,7 @@
 ++#define PCIE_RGR1_SW_INIT_1_PERSTB_MASK                         0x4
 --- /dev/null
 +++ b/artifacts/u-boot/patches/0010-bcm2712-pcie-mmu-map.patch
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,43 @@
 +--- a/arch/arm/mach-bcm283x/init.c
 ++++ b/arch/arm/mach-bcm283x/init.c
 +@@ -18,7 +18,7 @@
@@ -132,7 +132,7 @@
 + 		.virt = 0x107c000000UL,
 --- /dev/null
 +++ b/artifacts/u-boot/patches/0011-bcm2712-pcie-driver.patch
-@@ -0,0 +1,580 @@
+@@ -0,0 +1,579 @@
 +--- a/drivers/pci/pcie_brcmstb.c
 ++++ b/drivers/pci/pcie_brcmstb.c
 +@@ -21,9 +21,12 @@
