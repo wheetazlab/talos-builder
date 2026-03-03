@@ -68,7 +68,7 @@
 + #define  PCIE_HARD_DEBUG_SERDES_IDDQ_MASK         0x08000000
 + 
 + #define PCIE_INTR2_CPU_STATUS                 0x4300
-+@@ -108,7 +137,8 @@
++@@ -106,7 +135,8 @@
 + #define PCIE_MSI_INTR2_CLR                    0x4508
 + #define PCIE_MSI_INTR2_MASK_SET               0x4510
 + 
