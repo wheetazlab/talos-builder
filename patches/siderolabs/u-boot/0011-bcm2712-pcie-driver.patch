@@ -1,4 +1,5 @@
 --- a/drivers/pci/pcie_brcmstb.c
++++ b/drivers/pci/pcie_brcmstb.c
 @@ -21,9 +21,12 @@
  #include <linux/bitfield.h>
  #include <linux/log2.h>
@@ -71,7 +72,7 @@
  };
  
  /**
-@@ -104,3 +175,236 @@ static bool brcm_pcie_rc_mode(struct brcm_pcie *pcie)
+@@ -104,6 +147,239 @@ static bool brcm_pcie_rc_mode(struct brcm_pcie *pcie)
  	return (val & STATUS_PCIE_PORT_MASK) >> STATUS_PCIE_PORT_SHIFT;
  }
  
@@ -308,14 +309,18 @@
 +	return 0;
 +}
 +
-@@ -134,5 +276,6 @@ static int brcm_pcie_config_address(const struct udevice *dev, pci_dev_t bdf,
+ /**
+  * brcm_pcie_link_up() - Check whether the PCIe link is up
+  * @pcie: Pointer to the PCIe controller state
+@@ -134,6 +410,7 @@ static int brcm_pcie_config_address(const struct udevice *dev, pci_dev_t bdf,
  	 * Busses 0 (host PCIe bridge) and 1 (its immediate child)
  	 * are limited to a single device each
  	 */
 +	pci_bus -= pcie->bus_base;
  	if (pci_bus < 2 && pci_dev > 0)
  		return -EINVAL;
-@@ -331,7 +473,7 @@ static void brcm_pcie_set_outbound_win(struct brcm_pcie *pcie,
+ 
+@@ -331,7 +608,7 @@ static void brcm_pcie_set_outbound_win(struct brcm_pcie *pcie,
  	writel(tmp, base + PCIE_MEM_WIN0_BASE_LIMIT(win));
  
  	/* Write the cpu & limit addr upper bits */
@@ -324,8 +329,7 @@
  	phys_addr_mb_high = phys_addr_mb >> high_addr_shift;
  	tmp = readl(base + PCIE_MEM_WIN0_BASE_HI(win));
  	u32p_replace_bits(&tmp, phys_addr_mb_high,
-@@ -374,70 +487,52 @@ static int brcm_pcie_probe(struct udevice *dev)
- 	struct udevice *ctlr = pci_get_controller(dev);
+@@ -351,22 +628,28 @@ static int brcm_pcie_probe(struct udevice *dev)
  	struct pci_controller *hose = dev_get_uclass_priv(ctlr);
  	struct brcm_pcie *pcie = dev_get_priv(dev);
  	void __iomem *base = pcie->base;
@@ -356,11 +360,10 @@
 +	pcie->cfg->bridge_sw_init_set(pcie, 1);
 +	if (pcie->cfg->type != BRCM_PCIE_BCM2712)
 +		pcie->cfg->perst_set(pcie, 1);
-+
  	/*
  	 * The delay is a safety precaution to preclude the reset signal
  	 * from looking like a glitch.
- 	 */
+@@ -374,9 +657,9 @@ static int brcm_pcie_probe(struct udevice *dev)
  	udelay(100);
  
  	/* Take the bridge out of reset */
@@ -372,9 +375,7 @@
  		     PCIE_HARD_DEBUG_SERDES_IDDQ_MASK);
  
  	/* Wait for SerDes to be stable */
- 	udelay(100);
- 
- 	clrsetbits_le32(base + PCIE_MISC_MISC_CTRL,
+@@ -387,34 +670,9 @@ static int brcm_pcie_probe(struct udevice *dev)
  			MISC_CTRL_MAX_BURST_SIZE_MASK,
  			MISC_CTRL_SCB_ACCESS_EN_MASK |
  			MISC_CTRL_CFG_READ_UR_MODE_MASK |
@@ -412,7 +413,7 @@
  
  	/* Mask all interrupts since we are not handling any yet */
  	writel(0xffffffff, base + PCIE_MSI_INTR2_MASK_SET);
-@@ -413,32 +503,60 @@ static int brcm_pcie_probe(struct udevice *dev)
+@@ -425,9 +683,37 @@ static int brcm_pcie_probe(struct udevice *dev)
  	if (pcie->gen)
  		brcm_pcie_set_gen(pcie, pcie->gen);
  
@@ -424,25 +425,11 @@
 +	if (num_inbound_wins < 0)
 +		return num_inbound_wins;
 +	brcm_set_inbound_win_registers(pcie, inbound_wins, num_inbound_wins + 1);
- 
--	/*
--	 * Wait for 100ms after PERST# deassertion; see PCIe CEM specification
--	 * sections 2.2, PCIe r5.0, 6.6.1.
--	 */
--	mdelay(100);
--
--	/* Give the RC/EP time to wake up, before trying to configure RC.
--	 * Intermittently check status for link-up, up to a total of 100ms.
--	 */
--	for (i = 0; i < 100 && !brcm_pcie_link_up(pcie); i += 5)
--		mdelay(5);
++
 +	tmp = readl(base + PCIE_MISC_MISC_CTRL);
 +	for (int memc = 0; memc < pcie->num_memc; memc++) {
 +		scb_size_val = ilog2(pcie->memc_size[memc]) - 15;
- 
--	if (!brcm_pcie_link_up(pcie)) {
--		printf("PCIe BRCM: link down\n");
--		return -EINVAL;
++
 +		if (memc == 0)
 +			u32p_replace_bits(&tmp, scb_size_val,
 +					  PCIE_MISC_MISC_CTRL_SCB0_SIZE_MASK);
@@ -452,48 +439,31 @@
 +		else if (memc == 2)
 +			u32p_replace_bits(&tmp, scb_size_val,
 +					  PCIE_MISC_MISC_CTRL_SCB2_SIZE_MASK);
- 	}
++	}
 +	writel(tmp, base + PCIE_MISC_MISC_CTRL);
- 
--	if (!brcm_pcie_rc_mode(pcie)) {
--		printf("PCIe misconfigured; is in EP mode\n");
--		return -EINVAL;
++
 +	/* Run SoC-specific post-setup before PERST# deassertion */
 +	if (pcie->cfg->post_setup) {
 +		ret = pcie->cfg->post_setup(pcie);
 +		if (ret)
 +			return ret;
- 	}
- 
++	}
++
 +	/* Unassert the fundamental reset - starts link training */
 +	pcie->cfg->perst_set(pcie, 0);
-+
-+	/*
-+	 * Wait for 100ms after PERST# deassertion; see PCIe CEM specification
-+	 * sections 2.2, PCIe r5.0, 6.6.1.
-+	 */
-+	mdelay(100);
-+
-+	/* Give the RC/EP time to wake up, before trying to configure RC.
-+	 * Intermittently check status for link-up, up to a total of 100ms.
-+	 */
-+	for (i = 0; i < 100 && !brcm_pcie_link_up(pcie); i += 5)
-+		mdelay(5);
-+
-+	if (!brcm_pcie_link_up(pcie)) {
-+		printf("PCIe BRCM: link down\n");
-+		return -EINVAL;
-+	}
-+
-+	if (!pcie->cfg->rc_mode(pcie)) {
-+		printf("PCIe misconfigured; is in EP mode\n");
-+		return -EINVAL;
-+	}
-+
- 	for (i = 0; i < hose->region_count; i++) {
- 		struct pci_region *reg = &hose->regions[i];
  
-@@ -458,6 +562,8 @@ static int brcm_pcie_probe(struct udevice *dev)
+ 	/*
+ 	 * Wait for 100ms after PERST# deassertion; see PCIe CEM specification
+@@ -446,7 +732,7 @@ static int brcm_pcie_probe(struct udevice *dev)
+ 		return -EINVAL;
+ 	}
+ 
+-	if (!brcm_pcie_rc_mode(pcie)) {
++	if (!pcie->cfg->rc_mode(pcie)) {
+ 		printf("PCIe misconfigured; is in EP mode\n");
+ 		return -EINVAL;
+ 	}
+@@ -473,6 +759,8 @@ static int brcm_pcie_probe(struct udevice *dev)
  	clrsetbits_le32(base + PCIE_RC_CFG_PRIV1_ID_VAL3,
  			PCIE_RC_CFG_PRIV1_ID_VAL3_CLASS_CODE_MASK, 0x060400);
  
@@ -502,7 +472,7 @@
  	if (pcie->ssc) {
  		ret = brcm_pcie_set_ssc(pcie->base);
  		if (!ret)
-@@ -514,14 +620,17 @@ static int brcm_pcie_remove(struct udevice *dev)
+@@ -514,14 +802,17 @@ static int brcm_pcie_remove(struct udevice *dev)
  	void __iomem *base = pcie->base;
  
  	/* Assert fundamental reset */
@@ -523,7 +493,7 @@
  
  	return 0;
  }
-@@ -546,6 +662,11 @@ static int brcm_pcie_of_to_plat(struct udevice *dev)
+@@ -546,6 +837,11 @@ static int brcm_pcie_of_to_plat(struct udevice *dev)
  	else
  		pcie->gen = max_link_speed;
  
@@ -535,7 +505,7 @@
  	return 0;
  }
  
-@@ -554,7 +675,39 @@ static const struct dm_pci_ops brcm_pcie_ops = {
+@@ -554,8 +850,40 @@ static const struct dm_pci_ops brcm_pcie_ops = {
  	.write_config	= brcm_pcie_write_config,
  };
  
@@ -576,3 +546,4 @@
 +	{ .compatible = "brcm,bcm2712-pcie", .data = (ulong)&brcm_pcie_bcm2712_cfg },
  	{ }
  };
+ 
