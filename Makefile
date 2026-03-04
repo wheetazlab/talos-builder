@@ -23,11 +23,11 @@ OVERLAY_OPTION_ARGS = $(foreach opt,$(OVERLAY_OPTIONS),--overlay-option $(opt))
 KERNEL_ARGS ?=
 KERNEL_ARG_ARGS = $(foreach arg,$(KERNEL_ARGS),--extra-kernel-arg $(arg))
 
-# Two patches are applied to sbc-raspberrypi v0.2.0 before the overlay build:
-# 0001: Adds dtparam=pciex1 to config.txt so the RPi firmware enables the
-#       BCM2712 PCIe lane (M.2 slot) and passes it to U-Boot in the DT.
-# 0002: Full BCM2712 U-Boot PCIe driver support (per-chip config struct,
-#       PERST#/bridge callbacks, SerDes PLL init) so NVMe enumerates on CM5.
+# The sbc-raspberrypi overlay is patched before building:
+# rpi_5_defconfig.patch: tinkerbell-community's proven Pi5 U-Boot defconfig;
+#   adds BCM2712 PCIe/NVMe/RP1 driver support and rpi_5_defconfig config target.
+# 0002-use-tinkerbell-uboot-rpi5.patch: bumps U-Boot to v2026.04-rc1 (required
+#   for the defconfig) and updates the build to use make rpi_5_defconfig.
 #
 # No custom kernel build required — upstream siderolabs kernel is used directly.
 # nvme.ko (CONFIG_BLK_DEV_NVME=m) is already bundled in the Talos initramfs.
@@ -57,7 +57,7 @@ help:
 	@echo "patches-pi5    : Apply all patches for Raspberry Pi 5"
 	@echo "patches-pi4    : Apply all patches for Raspberry Pi 4"
 	@echo "kernel         : Build kernel"
-	@echo "overlay        : Build sbc-raspberrypi overlay from source (adds dtparam=pciex1 to config.txt for CM5 M.2)"
+	@echo "overlay        : Build sbc-raspberrypi overlay from source (tinkerbell rpi_5_defconfig + U-Boot v2026.04-rc1)"
 	@echo "imager         : Build imager docker image"
 	@echo "installer-base : Build installer-base docker image"
 	@echo "kern_initramfs : Build kernel and initramfs"
@@ -88,12 +88,10 @@ checkouts-clean:
 #
 .PHONY: patches patches-pi4 patches-pi5 patches-sbc
 patches-sbc:
-	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch"
-	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
-		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-Add-BCM2712-PCIe-driver-support.patch"
-	cp "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0009-bcm2712-support.patch" \
+	cp "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/rpi_5_defconfig.patch" \
 		"$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi/artifacts/u-boot/patches/"
+	cd "$(CHECKOUTS_DIRECTORY)/sbc-raspberrypi" && \
+		git apply "$(PATCHES_DIRECTORY)/siderolabs/sbc-raspberrypi/0002-use-tinkerbell-uboot-rpi5.patch"
 
 patches-pi5: patches-sbc
 
@@ -166,9 +164,7 @@ kern_initramfs:
 # Installer/Image
 #
 # CONFIG_TXT (dtparam=i2c_arm=on) is always appended so I2C is available out
-# of the box. dtparam=pciex1 is injected into config.txt at overlay build time
-# by patches/siderolabs/sbc-raspberrypi/0001-Enable-PCIe-for-CM5-IO-Board-NVMe.patch.
-# Any OVERLAY_OPTIONS passed via the environment or build.yaml are additive.
+# of the box. Any OVERLAY_OPTIONS passed via the environment or build.yaml are additive.
 .PHONY: installer
 installer:
 	cd "$(CHECKOUTS_DIRECTORY)/talos" && \
