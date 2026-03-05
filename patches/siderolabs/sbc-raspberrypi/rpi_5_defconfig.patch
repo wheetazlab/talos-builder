@@ -394,10 +394,10 @@ diff --git a/board/raspberrypi/rpi/rpi.env b/board/raspberrypi/rpi/rpi.env
 index 9ac9d6768ca..f879df109ac 100644
 --- a/board/raspberrypi/rpi/rpi.env
 +++ b/board/raspberrypi/rpi/rpi.env
-@@ -77,4 +77,11 @@ pxefile_addr_r=0x05500000
+@@ -77,4 +77,8 @@ pxefile_addr_r=0x05500000
  fdt_addr_r=0x05600000
  ramdisk_addr_r=0x05700000
-
+ 
 -boot_targets=mmc usb pxe dhcp
 +boot_targets=mmc nvme usb pxe dhcp
 +boot_efi_mmc0=mmc dev 0 && fatload mmc 0:1 ${kernel_addr_r} EFI/boot/BOOTAA64.efi && bootefi ${kernel_addr_r}
